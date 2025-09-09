@@ -2,6 +2,20 @@
 
 API REST completa en .NET 9 para gestionar lugares naturales de México (parques, cascadas, miradores, senderos) con coordenadas, metadatos y relaciones entre entidades.
 
+# Logica de negocio y estructura profesional
+
+## 🧠 Lógica de Negocio y Estructura Profesional
+
+La lógica de negocio está organizada en una capa de servicios (`Services/`) que implementa las reglas y procesos para gestionar lugares, senderos, fotos, reseñas y amenidades. Cada servicio expone interfaces claras y desacopladas, facilitando pruebas y mantenimiento.
+
+- **Capa de Controladores (`Controllers/`)**: Expone los endpoints REST y delega la lógica a los servicios.
+- **Capa de Servicios (`Services/`)**: Implementa la lógica de negocio, validaciones adicionales y orquestación de operaciones complejas.
+- **Capa de Repositorios (implícita con EF Core)**: Acceso a datos mediante `NatureDbContext` y configuraciones en `Data/Configurations/`.
+- **DTOs (`Models/DTOs/`)**: Separan las entidades del dominio de los datos expuestos por la API.
+- **Validadores (`Validators/`)**: Validan los DTOs de entrada usando FluentValidation.
+- **Mapeos (`Mappings/`)**: Perfiles de AutoMapper para transformar entre entidades y DTOs.
+- **Extensiones (`Extensions/`)**: Métodos de extensión para configuración y utilidades.
+
 ## 🚀 Características Principales
 
 - **Arquitectura profesional** con separación de responsabilidades
@@ -300,39 +314,8 @@ Controller → Service → Repository (EF Core) → Database
    DTOs ← AutoMapper ← Entities
 ```
 
-## 🎯 Evaluación
+### Autor 
+- **Nombre**: José de Jesús Almanza Contreras
+- **GitHub**: [github.com/JAlcon00](https://github.com)
+- **Correo**: c.jesusalmanza@gmail.com
 
-| Criterio | Puntos | ✅ Implementado |
-|----------|--------|----------------|
-| Diseño de entidades y relaciones | 20 pts | ✅ |
-| Migraciones y uso de Docker | 15 pts | ✅ |
-| Datos precargados (seed) | 15 pts | ✅ |
-| Endpoints REST solicitados | 25 pts | ✅ |
-| Calidad del código | 15 pts | ✅ |
-| Documentación en README | 10 pts | ✅ |
-| **Total** | **100 pts** | **✅** |
-
-## 🚀 Próximos Pasos
-
-- [ ] Implementar autenticación JWT
-- [ ] Agregar paginación a los endpoints
-- [ ] Implementar caché con Redis
-- [ ] Agregar más validaciones de negocio
-- [ ] Implementar soft delete
-- [ ] Agregar tests unitarios e integración
-
-## 🤝 Contribución
-
-1. Fork el proyecto
-2. Crea una rama: `git checkout -b feature/nueva-funcionalidad`
-3. Commit tus cambios: `git commit -m 'Agregar nueva funcionalidad'`
-4. Push a la rama: `git push origin feature/nueva-funcionalidad`
-5. Abre un Pull Request
-
-## 📝 Licencia
-
-Este proyecto está bajo la Licencia MIT. Ver el archivo `LICENSE` para más detalles.
-
----
-
-**🏞️ Nature API - Conectando México con su belleza natural** 🇲🇽
