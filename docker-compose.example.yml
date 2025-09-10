@@ -6,8 +6,8 @@ services:
     container_name: nature-api-sqlserver
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=${SA_PASSWORD}
-      - MSSQL_PID=${MSSQL_PID:-Express}
+      - SA_PASSWORD=your_secure_password_here
+      - MSSQL_PID=Express
     ports:
       - "1433:1433"
     volumes:
@@ -16,7 +16,7 @@ services:
       - nature-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P ${SA_PASSWORD} -Q 'SELECT 1'"]
+      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P your_secure_password_here -Q 'SELECT 1'"]
       interval: 30s
       timeout: 10s
       retries: 5
