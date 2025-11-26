@@ -19,11 +19,14 @@ bld/
 .env.local
 .env.production
 .env.development
+*.env
 
 # Configuration files with sensitive data
 appsettings.json
 appsettings.Development.json
 appsettings.Production.json
+appsettings.*.json
+!appsettings.example.json
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/

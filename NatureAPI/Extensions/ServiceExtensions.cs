@@ -26,8 +26,14 @@ public static class ServiceExtensions
         if (!string.IsNullOrEmpty(databaseUrl))
         {
             // Railway proporciona DATABASE_URL en formato: postgres://user:password@host:port/database
-            // Npgsql lo acepta directamente, solo cambiar postgres:// por postgresql://
+            // Npgsql necesita postgresql:// en lugar de postgres://
             connectionString = databaseUrl.Replace("postgres://", "postgresql://");
+        }
+        else
+        {
+            // Fallback: usar connection string de configuración
+            var logger = services.BuildServiceProvider().GetService<ILogger<object>>();
+            logger?.LogWarning("DATABASE_URL no encontrada, usando DefaultConnection de appsettings");
         }
         
         services.AddDbContext<NatureDbContext>(options =>
