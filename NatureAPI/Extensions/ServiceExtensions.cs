@@ -19,8 +19,26 @@ public static class ServiceExtensions
     /// </summary>
     public static IServiceCollection AddDatabaseServices(this IServiceCollection services, IConfiguration configuration)
     {
+        var connectionString = configuration.GetConnectionString("DefaultConnection");
+        
+        // Detectar si estamos en Railway (tiene DATABASE_URL)
+        var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+        if (!string.IsNullOrEmpty(databaseUrl))
+        {
+            // Railway proporciona DATABASE_URL en formato: postgres://user:password@host:port/database
+            // Npgsql lo acepta directamente, solo cambiar postgres:// por postgresql://
+            connectionString = databaseUrl.Replace("postgres://", "postgresql://");
+        }
+        
         services.AddDbContext<NatureDbContext>(options =>
-            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+            options.UseNpgsql(
+                connectionString,
+                npgsqlOptions => npgsqlOptions
+                    .EnableRetryOnFailure(
+                        maxRetryCount: 5,
+                        maxRetryDelay: TimeSpan.FromSeconds(10),
+                        errorCodesToAdd: null)
+            ));
 
         return services;
     }
@@ -103,6 +121,17 @@ public static class ServiceExtensions
                     .AllowAnyHeader();
             });
         });
+
+        return services;
+    }
+
+    /// <summary>
+    /// Configura HttpClient y servicios de IA
+    /// </summary>
+    public static IServiceCollection AddHttpClientServices(this IServiceCollection services)
+    {
+        services.AddHttpClient();
+        services.AddScoped<IAiSummaryService, AiSummaryService>();
 
         return services;
     }

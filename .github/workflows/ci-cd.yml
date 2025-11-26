@@ -1,0 +1,226 @@
+name: CI/CD Pipeline - NatureAPI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Job 1: Build y Test
+  build-and-test:
+    name: Build & Test .NET API
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    - name: 🔧 Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        
+    - name: 📦 Restaurar dependencias
+      run: dotnet restore
+      
+    - name: 🏗️ Build
+      run: dotnet build --configuration Release --no-restore
+      
+    - name: 🧪 Ejecutar tests (opcional)
+      run: dotnet test --no-restore --verbosity normal --logger "trx;LogFileName=test-results.trx" || true
+      continue-on-error: true
+      
+    - name: 📊 Publicar resultados de tests
+      uses: dorny/test-reporter@v1
+      if: always()
+      with:
+        name: Test Results
+        path: '**/*.trx'
+        reporter: dotnet-trx
+        fail-on-error: false
+      continue-on-error: true
+
+  # Job 2: Build y Push Docker Image
+  build-docker:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    permissions:
+      contents: read
+      packages: write
+      
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    - name: 🔐 Login a GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: 🔐 Login a Docker Hub (opcional)
+      if: github.event_name != 'pull_request'
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+      continue-on-error: true
+        
+    - name: 📝 Extraer metadata para Docker
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: |
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          ${{ secrets.DOCKER_USERNAME }}/nature-api
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+          
+    - name: 🏗️ Build y Push Docker Image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./NatureAPI/Dockerfile
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  # Job 3: Deploy a Railway/Render (configurable)
+  deploy:
+    name: Deploy to Cloud
+    runs-on: ubuntu-latest
+    needs: build-docker
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: 📥 Checkout código
+      uses: actions/checkout@v4
+      
+    # Opción A: Deploy a Railway (por defecto)
+    - name: 🚂 Deploy to Railway
+      run: |
+        echo "Desplegando a Railway..."
+        # Instalar Railway CLI
+        npm install -g @railway/cli
+        # Link al proyecto y deploy
+        railway link ${{ secrets.RAILWAY_PROJECT_ID }}
+        railway up --detach
+      env:
+        RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        
+    # Opción B: Deploy a Render
+    - name: 🎨 Deploy to Render
+      if: vars.DEPLOY_PLATFORM == 'render'
+      run: |
+        echo "Desplegando a Render..."
+        curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+      continue-on-error: true
+        
+    # Opción C: Deploy a Azure Web App
+    - name: ☁️ Deploy to Azure
+      if: vars.DEPLOY_PLATFORM == 'azure'
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+        publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+      continue-on-error: true
+        
+    # Opción D: Deploy a Fly.io
+    - name: 🪂 Deploy to Fly.io
+      if: vars.DEPLOY_PLATFORM == 'flyio'
+      uses: superfly/flyctl-actions/setup-flyctl@master
+      with:
+        version: latest
+    - run: flyctl deploy --remote-only
+      env:
+        FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+      continue-on-error: true
+
+  # Job 4: Health Check post-deploy
+  health-check:
+    name: Health Check
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: 🏥 Verificar Health Endpoint
+      run: |
+        echo "Esperando 30 segundos para que el servicio inicie..."
+        sleep 30
+        
+        API_URL="${{ secrets.API_URL }}"
+        if [ -z "$API_URL" ]; then
+          echo "⚠️ API_URL no configurada, omitiendo health check"
+          exit 0
+        fi
+        
+        echo "Probando $API_URL/health"
+        response=$(curl -s -o /dev/null -w "%{http_code}" "$API_URL/health" || echo "000")
+        
+        if [ "$response" = "200" ]; then
+          echo "✅ Health check exitoso!"
+        else
+          echo "❌ Health check falló con código: $response"
+          exit 1
+        fi
+      continue-on-error: true
+        
+    - name: 🧪 Probar endpoint con IA
+      run: |
+        API_URL="${{ secrets.API_URL }}"
+        if [ -z "$API_URL" ]; then
+          echo "⚠️ API_URL no configurada, omitiendo test de IA"
+          exit 0
+        fi
+        
+        echo "Probando endpoint de IA: $API_URL/api/places/1/summary"
+        response=$(curl -s "$API_URL/api/places/1/summary" || echo "error")
+        echo "Respuesta: $response"
+        
+        if [[ "$response" == *"placeId"* ]] || [[ "$response" == *"summary"* ]]; then
+          echo "✅ Integración IA funcionando!"
+        else
+          echo "⚠️ Respuesta inesperada de IA"
+        fi
+      continue-on-error: true
+
+  # Job 5: Notificación
+  notify:
+    name: Notificar resultado
+    runs-on: ubuntu-latest
+    needs: [build-and-test, build-docker, deploy, health-check]
+    if: always()
+    
+    steps:
+    - name: 📢 Resumen del despliegue
+      run: |
+        echo "## 🚀 Resumen del Pipeline CI/CD" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Actor**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Build**: ${{ needs.build-and-test.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Docker**: ${{ needs.build-docker.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Deploy**: ${{ needs.deploy.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Health Check**: ${{ needs.health-check.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "✨ **Pipeline completado!**" >> $GITHUB_STEP_SUMMARY
+

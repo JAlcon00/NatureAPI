@@ -1,12 +1,13 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
 namespace NatureAPI.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialPostgreSQL : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -15,9 +16,9 @@ namespace NatureAPI.Migrations
                 name: "Amenities",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -28,18 +29,18 @@ namespace NatureAPI.Migrations
                 name: "Places",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
-                    Category = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
-                    Latitude = table.Column<double>(type: "float(18)", precision: 18, scale: 6, nullable: false),
-                    Longitude = table.Column<double>(type: "float(18)", precision: 18, scale: 6, nullable: false),
-                    ElevationMeters = table.Column<int>(type: "int", nullable: false),
-                    Accessible = table.Column<bool>(type: "bit", nullable: false),
-                    EntryFee = table.Column<double>(type: "float(18)", precision: 18, scale: 2, nullable: false),
-                    OpeningHours = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()")
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    Description = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
+                    Category = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    Latitude = table.Column<double>(type: "double precision", precision: 18, scale: 6, nullable: false),
+                    Longitude = table.Column<double>(type: "double precision", precision: 18, scale: 6, nullable: false),
+                    ElevationMeters = table.Column<int>(type: "integer", nullable: false),
+                    Accessible = table.Column<bool>(type: "boolean", nullable: false),
+                    EntryFee = table.Column<double>(type: "double precision", precision: 18, scale: 2, nullable: false),
+                    OpeningHours = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "GETUTCDATE()")
                 },
                 constraints: table =>
                 {
@@ -50,11 +51,11 @@ namespace NatureAPI.Migrations
                 name: "Photos",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    PlaceId = table.Column<int>(type: "int", nullable: false),
-                    Url = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
-                    Description = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: true)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    PlaceId = table.Column<int>(type: "integer", nullable: false),
+                    Url = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
+                    Description = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -71,8 +72,8 @@ namespace NatureAPI.Migrations
                 name: "PlaceAmenities",
                 columns: table => new
                 {
-                    PlaceId = table.Column<int>(type: "int", nullable: false),
-                    AmenityId = table.Column<int>(type: "int", nullable: false)
+                    PlaceId = table.Column<int>(type: "integer", nullable: false),
+                    AmenityId = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -95,13 +96,13 @@ namespace NatureAPI.Migrations
                 name: "Reviews",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    PlaceId = table.Column<int>(type: "int", nullable: false),
-                    Author = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Rating = table.Column<int>(type: "int", nullable: false),
-                    Comment = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false, defaultValueSql: "GETUTCDATE()")
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    PlaceId = table.Column<int>(type: "integer", nullable: false),
+                    Author = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    Rating = table.Column<int>(type: "integer", nullable: false),
+                    Comment = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "GETUTCDATE()")
                 },
                 constraints: table =>
                 {
@@ -118,15 +119,15 @@ namespace NatureAPI.Migrations
                 name: "Trails",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    PlaceId = table.Column<int>(type: "int", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    DistanceKm = table.Column<double>(type: "float(8)", precision: 8, scale: 2, nullable: false),
-                    EstimatedTimeMinutes = table.Column<int>(type: "int", nullable: false),
-                    Difficulty = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    Path = table.Column<string>(type: "nvarchar(2000)", maxLength: 2000, nullable: false),
-                    IsLoop = table.Column<bool>(type: "bit", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    PlaceId = table.Column<int>(type: "integer", nullable: false),
+                    Name = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    DistanceKm = table.Column<double>(type: "double precision", precision: 8, scale: 2, nullable: false),
+                    EstimatedTimeMinutes = table.Column<int>(type: "integer", nullable: false),
+                    Difficulty = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    Path = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
+                    IsLoop = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {

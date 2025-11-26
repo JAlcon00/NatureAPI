@@ -1,10 +1,24 @@
 # NatureAPI - API REST de Lugares Naturales de México 🌿
 
-Una API REST robusta desarrollada en .NET 9 que gestiona lugares naturales de México (parques nacionales, cascadas, miradores, senderos) con coordenadas geográficas precisas, metadatos completos y relaciones complejas entre entidades.
+Una API REST robusta desarrollada en .NET 9 que gestiona lugares naturales de México (parques nacionales, cascadas, miradores, senderos) con coordenadas geográficas precisas, metadatos completos, **integración con OpenAI** y despliegue automatizado con CI/CD.
+
+## 🚀 **NUEVO: Listo para Despliegue en Producción**
+
+✅ **Integración con OpenAI GPT-4o-mini** para análisis inteligente  
+✅ **Docker & Docker Compose** configurado  
+✅ **GitHub Actions CI/CD** pipeline completo  
+✅ **Multi-cloud ready** (Railway, Render, Azure, Fly.io)  
+✅ **Health checks** y monitoreo  
+
+📚 **Documentación de Despliegue**: [DEPLOYMENT.md](DEPLOYMENT.md)  
+🤖 **Integración IA**: [AI_INTEGRATION.md](AI_INTEGRATION.md)  
+
+---
 
 ## 🌟 Características Principales
 
 - ✅ **Gestión completa de lugares naturales** con coordenadas GPS y metadatos detallados
+- ✅ **Integración OpenAI** 🤖 - Resúmenes y análisis inteligentes de lugares
 - ✅ **Base de datos SQL Server** ejecutándose en contenedores Docker
 - ✅ **Migraciones Entity Framework Core** con datos iniciales precargados
 - ✅ **Validaciones robustas** implementadas con FluentValidation
@@ -12,9 +26,10 @@ Una API REST robusta desarrollada en .NET 9 que gestiona lugares naturales de M�
 - ✅ **Mapeo automático de objetos** con AutoMapper
 - ✅ **Filtros avanzados** por categoría y dificultad de senderos
 - ✅ **Arquitectura limpia** con separación de responsabilidades
+- ✅ **CI/CD automatizado** con GitHub Actions
+- ✅ **Contenedores Docker** optimizados para producción
 - ✅ **Manejo de errores centralizado** con logging
 - ✅ **Patrones de diseño** Repository y Service
-- ✅ **Configuración modular** de Entity Framework
 
 ## 🏗️ Arquitectura del Proyecto
 

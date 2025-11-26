@@ -15,7 +15,7 @@ builder.Services.AddMappingServices();
 builder.Services.AddValidationServices();
 builder.Services.AddSwaggerServices();
 builder.Services.AddCorsServices();
-
+builder.Services.AddHttpClientServices();
 // Configurar logging
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();

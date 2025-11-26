@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using NatureAPI.Models.DTOs;
 using NatureAPI.Services.Interfaces;
 using FluentValidation;
+using OpenAI.Chat;
 
 namespace NatureAPI.Controllers;
 
@@ -16,15 +17,18 @@ public class PlacesController : ControllerBase
     private readonly IPlaceService _placeService;
     private readonly IValidator<CreatePlaceDto> _createPlaceValidator;
     private readonly ILogger<PlacesController> _logger;
+    private readonly IConfiguration _configuration;
 
     public PlacesController(
         IPlaceService placeService, 
         IValidator<CreatePlaceDto> createPlaceValidator,
-        ILogger<PlacesController> logger)
+        ILogger<PlacesController> logger,
+        IConfiguration configuration)
     {
         _placeService = placeService;
         _createPlaceValidator = createPlaceValidator;
         _logger = logger;
+        _configuration = configuration;
     }
 
     /// <summary>
@@ -116,8 +120,8 @@ public class PlacesController : ControllerBase
             if (!validationResult.IsValid)
             {
                 var errors = validationResult.Errors.Select(e => new { 
-                    Property = e.PropertyName, 
-                    Error = e.ErrorMessage 
+                    e.PropertyName, 
+                    e.ErrorMessage 
                 });
                 
                 _logger.LogWarning("Validación fallida para el lugar: {PlaceName}. Errores: {@Errors}", 
@@ -176,4 +180,114 @@ public class PlacesController : ControllerBase
             return StatusCode(500, new { message = "Error interno del servidor", details = ex.Message });
         }
     }
+
+    /// <summary>
+    /// Obtiene un resumen de un lugar específico usando IA
+    /// </summary>
+    /// <param name="id">ID del lugar natural</param>
+    /// <param name="aiSummaryService">Servicio de IA para generar resumen</param>
+    /// <param name="cancellationToken">Token de cancelación de la operación</param>
+    /// <returns>Resumen del lugar</returns>
+    /// <response code="200">Resumen obtenido exitosamente</response>
+    /// <response code="404">Lugar no encontrado</response>
+    [HttpGet("{id:int}/summary")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<object>> GetPlaceSummary(int id, [FromServices] IAiSummaryService aiSummaryService, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("GET /api/places/{PlaceId}/summary", id);
+        var summary = await aiSummaryService.GeneratePlaceSummaryAsync(id, cancellationToken);
+        if (summary == "Lugar no encontrado")
+        {
+            return NotFound(new { message = summary });
+        }
+        return Ok(new { placeId = id, summary });
+    }
+
+    /// <summary>
+    /// Analiza todos los lugares usando IA para obtener insights y recomendaciones
+    /// </summary>
+    /// <returns>Análisis completo de lugares naturales</returns>
+    /// <response code="200">Análisis generado exitosamente</response>
+    [HttpGet("ai-analyze")]
+    [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+    public async Task<ActionResult> AnalyzePlaces()
+    {
+        try
+        {
+            _logger.LogInformation("GET /api/places/ai-analyze - Iniciando análisis con IA");
+
+            // Obtener API Key
+            var openAIKey = _configuration["OpenAIKey"];
+            if (string.IsNullOrWhiteSpace(openAIKey))
+            {
+                return BadRequest(new { message = "OpenAI API Key no configurada" });
+            }
+
+            var client = new OpenAI.Chat.ChatClient(
+                model: "gpt-4o-mini",
+                apiKey: openAIKey
+            );
+
+            // Obtener todos los lugares básicos primero
+            var placesList = await _placeService.GetAllPlacesAsync(null, null);
+            
+            // Obtener detalles completos de cada lugar
+            var placesDetails = new List<PlaceDetailDto>();
+            foreach (var place in placesList.Take(10)) // Limitar a 10 lugares para no sobrecargar
+            {
+                var detail = await _placeService.GetPlaceByIdAsync(place.Id);
+                if (detail != null)
+                {
+                    placesDetails.Add(detail);
+                }
+            }
+            
+            // Preparar datos para análisis
+            var summary = placesDetails.Select(p => new
+            {
+                p.Id,
+                p.Name,
+                p.Category,
+                p.ElevationMeters,
+                p.Accessible,
+                p.EntryFee,
+                TrailCount = p.Trails?.Count ?? 0,
+                Trails = p.Trails?.Select(t => new { t.Name, t.DistanceKm, t.Difficulty }).ToList(),
+                AmenityCount = p.Amenities?.Count ?? 0,
+                Amenities = p.Amenities?.Select(a => a.Name).ToList()
+            });
+
+            var jsonData = System.Text.Json.JsonSerializer.Serialize(summary, new System.Text.Json.JsonSerializerOptions 
+            { 
+                WriteIndented = true 
+            });
+
+            // Generar prompt
+            var prompt = Services.Prompts.GeneratePlacesAnalysisPrompt(jsonData);
+
+            // Llamar a OpenAI
+            var result = await client.CompleteChatAsync([
+                new OpenAI.Chat.UserChatMessage(prompt)
+            ]);
+
+            // Obtener respuesta
+            var response = result.Value.Content[0].Text;
+
+            _logger.LogInformation("Análisis IA completado exitosamente");
+
+            return Ok(new 
+            { 
+                timestamp = DateTime.UtcNow,
+                totalPlacesAnalyzed = placesDetails.Count,
+                analysis = response 
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al analizar lugares con IA");
+            return StatusCode(500, new { message = "Error al realizar análisis con IA", error = ex.Message });
+        }
+    }
 }
+

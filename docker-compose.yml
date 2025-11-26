@@ -1,28 +1,53 @@
 version: '3.8'
 
 services:
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: nature-api-sqlserver
+  postgres:
+    image: postgres:16-alpine
+    container_name: nature-api-postgres
     environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=${SA_PASSWORD}
-      - MSSQL_PID=${MSSQL_PID:-Express}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-Password123!}
+      - POSTGRES_DB=${POSTGRES_DB:-NatureDB}
     ports:
-      - "1433:1433"
+      - "5432:5432"
     volumes:
-      - sqlserver_data:/var/opt/mssql
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - nature-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P ${SA_PASSWORD} -Q 'SELECT 1'"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 30s
       timeout: 10s
       retries: 5
 
+  api:
+    build:
+      context: .
+      dockerfile: NatureAPI/Dockerfile
+    container_name: nature-api
+    ports:
+      - "8080:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=${POSTGRES_DB:-NatureDB};Username=${POSTGRES_USER:-postgres};Password=${POSTGRES_PASSWORD:-Password123!};SSL Mode=Prefer;Trust Server Certificate=true
+      - AI__OpenAI__ApiKey=${OPENAI_API_KEY}
+      - AI__OpenAI__Model=gpt-4o-mini
+      - AI__OpenAI__Endpoint=https://api.openai.com/v1/chat/completions
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - nature-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
 volumes:
-  sqlserver_data:
+  postgres_data:
     driver: local
 
 networks:

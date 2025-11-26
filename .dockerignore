@@ -1,0 +1,58 @@
+# Archivos de Git
+.git
+.gitignore
+.gitattributes
+
+# IDEs
+.vs/
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build artifacts
+**/bin/
+**/obj/
+**/out/
+
+# Archivos de usuario
+*.user
+*.suo
+*.userosscache
+
+# Documentación y archivos innecesarios
+README.md
+*.md
+LICENSE
+.editorconfig
+
+# Docker
+docker-compose*.yml
+Dockerfile
+.dockerignore
+
+# Archivos de configuración local
+.env
+appsettings.Development.json
+appsettings.Local.json
+
+# Tests
+**/TestResults/
+**/*.trx
+
+# CI/CD
+.github/
+azure-pipelines.yml
+
+# Logs
+logs/
+*.log
+
+# Node modules (si existen)
+node_modules/
+npm-debug.log
+
+# Otros
+*.bak
+*.tmp
+
