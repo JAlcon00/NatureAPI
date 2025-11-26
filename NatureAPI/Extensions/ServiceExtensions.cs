@@ -25,12 +25,21 @@ public static class ServiceExtensions
         var databaseUrl = configuration["DATABASE_URL"] ?? Environment.GetEnvironmentVariable("DATABASE_URL");
         if (!string.IsNullOrEmpty(databaseUrl))
         {
-            // Railway proporciona DATABASE_URL en formato: postgres://user:password@host:port/database
-            // Npgsql necesita postgresql:// en lugar de postgres://
-            connectionString = databaseUrl.Replace("postgres://", "postgresql://");
-            
             var logger = services.BuildServiceProvider().GetService<ILogger<object>>();
-            logger?.LogInformation("DATABASE_URL detectada y convertida para Npgsql");
+            
+            try
+            {
+                // Parsear DATABASE_URL: postgres://user:password@host:port/database
+                var uri = new Uri(databaseUrl.Replace("postgres://", "postgresql://"));
+                
+                connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={uri.UserInfo.Split(':')[0]};Password={uri.UserInfo.Split(':')[1]};SSL Mode=Require;Trust Server Certificate=true";
+                
+                logger?.LogInformation("DATABASE_URL parseada correctamente para Npgsql");
+            }
+            catch (Exception ex)
+            {
+                logger?.LogError(ex, "Error al parsear DATABASE_URL, usando DefaultConnection");
+            }
         }
         else
         {
