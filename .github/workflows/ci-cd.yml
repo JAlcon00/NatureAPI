@@ -110,11 +110,11 @@ jobs:
         echo "Desplegando a Railway..."
         # Instalar Railway CLI
         npm install -g @railway/cli
-        # Link al proyecto y deploy
-        railway link ${{ secrets.RAILWAY_PROJECT_ID }}
+        # Autenticar y deploy directo al proyecto
         railway up --detach
       env:
         RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
         
     # Opción B: Deploy a Render
     - name: 🎨 Deploy to Render
