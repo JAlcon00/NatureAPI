@@ -22,12 +22,15 @@ public static class ServiceExtensions
         var connectionString = configuration.GetConnectionString("DefaultConnection");
         
         // Detectar si estamos en Railway (tiene DATABASE_URL)
-        var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+        var databaseUrl = configuration["DATABASE_URL"] ?? Environment.GetEnvironmentVariable("DATABASE_URL");
         if (!string.IsNullOrEmpty(databaseUrl))
         {
             // Railway proporciona DATABASE_URL en formato: postgres://user:password@host:port/database
             // Npgsql necesita postgresql:// en lugar de postgres://
             connectionString = databaseUrl.Replace("postgres://", "postgresql://");
+            
+            var logger = services.BuildServiceProvider().GetService<ILogger<object>>();
+            logger?.LogInformation("DATABASE_URL detectada y convertida para Npgsql");
         }
         else
         {
