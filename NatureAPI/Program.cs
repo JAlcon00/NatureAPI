@@ -7,6 +7,10 @@ using NatureAPI.Data.Seeds;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Configurar puerto dinámico (Railway, Heroku, etc.)
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+
 // Configurar servicios
 builder.Services.AddControllers();
 builder.Services.AddDatabaseServices(builder.Configuration);
