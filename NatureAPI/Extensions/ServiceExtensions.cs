@@ -32,7 +32,10 @@ public static class ServiceExtensions
                 // Parsear DATABASE_URL: postgres://user:password@host:port/database
                 var uri = new Uri(databaseUrl.Replace("postgres://", "postgresql://"));
                 
-                connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={uri.UserInfo.Split(':')[0]};Password={uri.UserInfo.Split(':')[1]};SSL Mode=Require;Trust Server Certificate=true";
+                // SSL Mode: Require para producción, Prefer para desarrollo local
+                var sslMode = uri.Host == "localhost" || uri.Host == "127.0.0.1" ? "Prefer" : "Require";
+                
+                connectionString = $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={uri.UserInfo.Split(':')[0]};Password={uri.UserInfo.Split(':')[1]};SSL Mode={sslMode};Trust Server Certificate=true";
                 
                 logger?.LogInformation("DATABASE_URL parseada correctamente para Npgsql");
             }

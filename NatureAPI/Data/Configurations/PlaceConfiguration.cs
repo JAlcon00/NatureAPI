@@ -46,7 +46,7 @@ public class PlaceConfiguration : IEntityTypeConfiguration<Place>
 
         builder.Property(p => p.CreatedAt)
             .IsRequired()
-            .HasDefaultValueSql("GETUTCDATE()");
+            .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
         // Relaciones
         builder.HasMany(p => p.Trails)

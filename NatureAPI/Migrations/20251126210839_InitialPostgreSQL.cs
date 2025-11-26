@@ -40,7 +40,7 @@ namespace NatureAPI.Migrations
                     Accessible = table.Column<bool>(type: "boolean", nullable: false),
                     EntryFee = table.Column<double>(type: "double precision", precision: 18, scale: 2, nullable: false),
                     OpeningHours = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "GETUTCDATE()")
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
                 },
                 constraints: table =>
                 {
@@ -102,7 +102,7 @@ namespace NatureAPI.Migrations
                     Author = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     Rating = table.Column<int>(type: "integer", nullable: false),
                     Comment = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "GETUTCDATE()")
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false, defaultValueSql: "CURRENT_TIMESTAMP")
                 },
                 constraints: table =>
                 {
